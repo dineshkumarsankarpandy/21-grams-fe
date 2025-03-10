@@ -6,12 +6,14 @@ import axios from 'axios';
 interface PageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onRegenerate: (siteMapPrompt: string, noOfPage: number, language: string) => void;
+  onRegenerate: (businessName:string,businessDescription:string,siteMapPrompt: string, noOfPage: number, language: string) => void;
   nodeId: string;
   onSitemapGenerated?: (sitemap: any) => void;
 }
 
 export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGenerated }: PageDialogProps) {
+  const [businessName,setBusinessName] = useState<string>('');
+  const [businessDescription, setBusinessDescription] = useState<string>('');
   const [siteMapPrompt, setSiteMapPrompt] = useState<string>('');
   const [noOfPage, setNoOfPage] = useState<number>(1);
   const [language, setLanguage] = useState<string>('');
@@ -19,7 +21,16 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
   const [error, setError] = useState<string | null>(null);
 
   const handleRegenerate = async () => {
-    // Validate inputs
+
+
+    if (!businessName.trim()){
+      setError('Business name required.')
+    }
+
+    if (!businessDescription.trim()) {
+      setError('Business Description required.');
+    }
+
     if (!siteMapPrompt.trim()) {
       setError('Sitemap Prompt is required.');
       return;
@@ -34,9 +45,11 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
 
     // Prepare the payload matching the backend SitemapGenerator model
     const payload = {
-      prompt: siteMapPrompt.trim(), // Use "prompt" instead of "sitemap_prompt"
-      page: noOfPage,               // Use "page" instead of "no_of_pages"
-      language: language.trim() || 'english', // Trim and default to "english"
+      businessName: businessName.trim(),
+      businessDescription:businessDescription.trim(),
+      prompt: siteMapPrompt.trim(),
+      page: noOfPage,         
+      language: language.trim() || 'english', 
     };
 
     try {
@@ -55,7 +68,9 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
         onSitemapGenerated(response.data);
       }
 
-      onRegenerate(siteMapPrompt, noOfPage, language);
+      onRegenerate(businessName,businessDescription,siteMapPrompt, noOfPage, language);
+      setBusinessName('');
+      setBusinessDescription('');
       setSiteMapPrompt('');
       setLanguage('');
       setNoOfPage(1);
@@ -88,6 +103,23 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
           </button>
         </div>
         <div className="space-y-4">
+          <div>
+            <label className="block text-s font-medium text-gray-700 mb-1"> Business Name </label>
+            <Input value={businessName}
+              onChange={(e)=> setBusinessName(e.target.value)}
+              placeholder='Enter your Business name'
+              className='w-72 h-[30px] bg-gray-100'
+            />
+          </div>
+
+          <div>
+            <label className="block text-s font-medium text-gray-700 mb-1"> Business Description </label>
+            <textarea value={businessDescription}
+              onChange={(e)=> setBusinessDescription(e.target.value)}
+              placeholder='Enter your Business Description'
+              className='w-72 h-[120px] px-2.5 py-1.5 bg-gray-100'
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Sitemap Prompt *</label>
             <textarea

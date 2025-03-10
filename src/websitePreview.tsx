@@ -26,6 +26,8 @@ function Website() {
       return;
     }
     // Find the root node
+    const businessName = savedData.businessName;
+    const businessDescription = savedData.businessDescription;
     const rootNode = savedData.savedNodes?.find((node: any) => node.id === 'root');
     if (!rootNode) {
       setError('Root node not found in sitemap data.');
@@ -37,13 +39,15 @@ function Website() {
     //   "BusinessDescription": "string",
     //   "pageTitle": "string",
     //   "sections": [
-    //     {
+    //     { 
     //       "sectionTitle": "string",
     //       "sectionDescription": "string"
     //     }
     //   ]
     // }
     const payload = {
+      businessName:businessName,
+      businessDescription:businessDescription,
       pageTitle: rootNode.data.label,
       sections: rootNode.data.sections?.map((section: any) => ({
         sectionTitle: section.title || section.sectionTitle,

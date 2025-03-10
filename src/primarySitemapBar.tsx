@@ -4,13 +4,13 @@ import { MoreHorizontal } from 'lucide-react';
 interface PrimaryNavbarProps {
   title?: string;
   onDelete?: () => void;
-  onSetupOpen?: () => void; // New prop to open setup form
+  onSetupOpen?: () => void; 
 }
 
 export const PrimaryNavbar: React.FC<PrimaryNavbarProps> = ({
   title = "Primary Sitemap",
   onDelete,
-  onSetupOpen, // Add to props
+  onSetupOpen, 
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -37,11 +37,11 @@ export const PrimaryNavbar: React.FC<PrimaryNavbarProps> = ({
     };
   }, [isMenuOpen]);
 
-  // Handle navbar click to open setup form
+
   const handleNavbarClick = () => {
     if (onSetupOpen) {
-      setIsMenuOpen(false); // Close menu if open
-      onSetupOpen(); // Trigger opening the setup form
+      setIsMenuOpen(false);
+      onSetupOpen(); 
     }
   };
 

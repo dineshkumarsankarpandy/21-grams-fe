@@ -53,12 +53,14 @@ const loadInitialState = () => {
   try {
     const savedData = localStorage.getItem(SITEMAP_STORAGE_KEY);
     if (savedData) {
-      const { savedNodes, savedEdges, savedPageCount } = JSON.parse(savedData);
+      const { savedNodes, savedEdges, savedPageCount,businessName,businessDescription } = JSON.parse(savedData);
       if (savedNodes?.length > 0 && savedEdges) {
         return {
           nodes: savedNodes,
           edges: savedEdges,
           pageCount: savedPageCount || 1,
+          businessName:businessName || '',
+          businessDescription: businessDescription || '',
         };
       }
     }
@@ -85,6 +87,10 @@ function SitemapFlow() {
   const [dialogNodeId, setDialogNodeId] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState<number>(savedState.pageCount);
 
+
+  const[businessName, setBusinessName] = useState(savedState.businessName)
+  const[businessDescription,setBusinessDescription]= useState(savedState.businessDescription)
+
   // Controls whether the "Primary Setup" form is open
   const [primarySetupOpen, setPrimarySetupOpen] = useState<boolean>(false);
   // Toggles the entire sitemap area
@@ -104,6 +110,8 @@ function SitemapFlow() {
         })),
         savedEdges: edges,
         savedPageCount: pageCount,
+        businessName,
+        businessDescription,
       };
       localStorage.setItem(SITEMAP_STORAGE_KEY, JSON.stringify(dataToSave));
     } catch (error) {
@@ -216,8 +224,8 @@ function SitemapFlow() {
 
   // Called by the "Primary Setup" form to do an initial generation
   const handlePrimarySetupRegenerate = useCallback(
-    (siteMapPrompt: string, noOfPage: number, language: string) => {
-      console.log('Generating sitemap with:', { siteMapPrompt, noOfPage, language });
+    (businessName:string, businessDescription:string  ,siteMapPrompt: string, noOfPage: number, language: string) => {
+      console.log('Generating sitemap with:', { businessName,businessDescription,siteMapPrompt, noOfPage, language });
       setPrimarySetupOpen(false);
     },
     []
@@ -254,6 +262,9 @@ function SitemapFlow() {
         console.error('Invalid sitemap data received', data);
         return;
       }
+
+      setBusinessName(data.businessName||'');
+      setBusinessDescription(data.businessDescription || '');
   
       // Find the homepage data (match title "Home" or use the first page)
       const homepage =
