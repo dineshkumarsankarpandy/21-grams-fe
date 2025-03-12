@@ -28,6 +28,7 @@ function Website() {
     // Find the root node
     const businessName = savedData.businessName;
     const businessDescription = savedData.businessDescription;
+    const imageUrl = savedData.imageUrl;
     const rootNode = savedData.savedNodes?.find((node: any) => node.id === 'root');
     if (!rootNode) {
       setError('Root node not found in sitemap data.');
@@ -48,6 +49,7 @@ function Website() {
     const payload = {
       businessName:businessName,
       businessDescription:businessDescription,
+      imageUrl:imageUrl,
       pageTitle: rootNode.data.label,
       sections: rootNode.data.sections?.map((section: any) => ({
         sectionTitle: section.title || section.sectionTitle,

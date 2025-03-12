@@ -53,7 +53,7 @@ const loadInitialState = () => {
   try {
     const savedData = localStorage.getItem(SITEMAP_STORAGE_KEY);
     if (savedData) {
-      const { savedNodes, savedEdges, savedPageCount,businessName,businessDescription } = JSON.parse(savedData);
+      const { savedNodes, savedEdges, savedPageCount,businessName,businessDescription,imageUrl } = JSON.parse(savedData);
       if (savedNodes?.length > 0 && savedEdges) {
         return {
           nodes: savedNodes,
@@ -61,6 +61,7 @@ const loadInitialState = () => {
           pageCount: savedPageCount || 1,
           businessName:businessName || '',
           businessDescription: businessDescription || '',
+          imageUrl:imageUrl || ''
         };
       }
     }
@@ -90,6 +91,7 @@ function SitemapFlow() {
 
   const[businessName, setBusinessName] = useState(savedState.businessName)
   const[businessDescription,setBusinessDescription]= useState(savedState.businessDescription)
+  const [imageUrl, setImageUrl] = useState(savedState.imageUrl)
 
   // Controls whether the "Primary Setup" form is open
   const [primarySetupOpen, setPrimarySetupOpen] = useState<boolean>(false);
@@ -112,6 +114,8 @@ function SitemapFlow() {
         savedPageCount: pageCount,
         businessName,
         businessDescription,
+        imageUrl
+
       };
       localStorage.setItem(SITEMAP_STORAGE_KEY, JSON.stringify(dataToSave));
     } catch (error) {
@@ -265,6 +269,7 @@ function SitemapFlow() {
 
       setBusinessName(data.businessName||'');
       setBusinessDescription(data.businessDescription || '');
+      setImageUrl(data.imageUrl)
   
       // Find the homepage data (match title "Home" or use the first page)
       const homepage =
