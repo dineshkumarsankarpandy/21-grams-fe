@@ -165,7 +165,7 @@ function SitemapFlow() {
 
       const newNodePosition: XYPosition = {
         x: parentPosition.x,
-        y: parentPosition.y + parentHeight + 50,
+        y: parentPosition.y + parentHeight + 50,  
       };
 
       const newNode: CustomNodeType = {
