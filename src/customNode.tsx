@@ -1,6 +1,5 @@
-
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { Handle, Position, useReactFlow, Node, Edge, NodeProps, ReactFlowInstance } from 'reactflow';
+import { Handle, Position, useReactFlow, Node, Edge, NodeProps } from 'reactflow';
 
 interface Section {
   id: number;
@@ -8,17 +7,20 @@ interface Section {
   description: string;
 }
 
-
-interface CustomNodeData {
+export interface CustomNodeData {
   label: string;
   sections: Section[];
   addChildNodeWithEdge?: (parentId: string, parentPosition: { x: number; y: number }) => string;
   onHeaderClick?: (nodeId: string, label: string) => void;
   getNextPageNumber?: () => number;
   level?: number;
-  
   subtreeWidth?: number;
 }
+
+const NODE_WIDTH = 180;
+const NODE_HEIGHT = 100;
+const HORIZONTAL_SPACING = 400;
+const VERTICAL_SPACING = 300;
 
 function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
   const reactFlowInstance = useReactFlow();
@@ -28,25 +30,21 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editLabel, setEditLabel] = useState<string>(data.label);
   const inputRef = useRef<HTMLInputElement>(null);
-  //const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const currentNode = getNode(id);
   const allEdges = reactFlowInstance.getEdges();
   const allNodes = reactFlowInstance.getNodes();
 
-  const NODE_WIDTH = 180;
-  const NODE_HEIGHT = 100;
-  const HORIZONTAL_SPACING = 200;
-  const VERTICAL_SPACING = 200;
-  
   useEffect(() => {
     const childEdges = allEdges.filter(edge => edge.source === id);
     setHasChild(childEdges.length > 0);
   }, [id, allEdges]);
 
+  // Returns the edge where this node is the target.
   const findParentEdge = useCallback((): Edge | undefined => {
     return allEdges.find(edge => edge.target === id);
   }, [allEdges, id]);
 
+  // A node is considered "root" if it has no incoming (parent) edge.
   const isRootNode = useCallback(() => !findParentEdge(), [findParentEdge]);
 
   const generateContent = useCallback(() => {
@@ -57,138 +55,12 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
     return allEdges.find(edge => edge.target === nodeId);
   }, [allEdges]);
 
-  // const recalculateLayout = useCallback(() => {
-  //   const currentAllNodes = reactFlowInstance.getNodes();
-  //   const currentAllEdges = reactFlowInstance.getEdges();
-
-  //   const rootNode = currentAllNodes.find(node =>
-  //     !currentAllEdges.some(edge => edge.target === node.id)
-  //   );
-
-  //   if (!rootNode) {
-  //     console.warn("No root node found. Cannot perform layout.");
-  //     return;
-  //   }
-
-  //   const workingNodes = JSON.parse(JSON.stringify(currentAllNodes)) as Node[];
-  //   const workingEdges = JSON.parse(JSON.stringify(currentAllEdges)) as Edge[];
-
-  //   const assignLevels = (nodeId: string, level: number) => {
-  //     const node = workingNodes.find(n => n.id === nodeId);
-  //     if (!node) return;
-
-  //     node.data = { ...node.data, level };
-  //     node.position.y = level * VERTICAL_SPACING;
-
-  //     const childEdges = workingEdges.filter(edge => edge.source === nodeId);
-  //     childEdges.forEach(edge => assignLevels(edge.target, level + 1));
-  //   };
-
-  //   const calculateSubtreeWidth = (nodeId: string): number => {
-  //     const node = workingNodes.find(n => n.id === nodeId);
-  //     if (!node) return NODE_WIDTH;
-
-  //     const childEdges = workingEdges.filter(edge => edge.source === nodeId);
-  //     if (childEdges.length === 0) {
-  //       node.data.subtreeWidth = NODE_WIDTH;
-  //       return NODE_WIDTH;
-  //     }
-
-  //     let totalWidth = 0;
-  //     childEdges.forEach(edge => {
-  //       totalWidth += calculateSubtreeWidth(edge.target) + MIN_HORIZONTAL_SPACING;
-  //     });
-
-  //     const width = Math.max(NODE_WIDTH, totalWidth - MIN_HORIZONTAL_SPACING);
-  //     node.data.subtreeWidth = width;
-  //     return width;
-  //   };
-
-  //   const positionNodes = (nodeId: string, xOffset: number): number => {
-  //     const node = workingNodes.find(n => n.id === nodeId);
-  //     if (!node) return xOffset;
-
-  //     const childEdges = workingEdges.filter(edge => edge.source === nodeId);
-  //     if (childEdges.length === 0) {
-  //       node.position.x = xOffset;
-  //       return xOffset + NODE_WIDTH + MIN_HORIZONTAL_SPACING;
-  //     }
-
-  //     let currentX = xOffset;
-  //     childEdges.forEach(edge => {
-  //       currentX = positionNodes(edge.target, currentX);
-  //     });
-
-  //     const firstChildId = childEdges[0].target;
-  //     const lastChildId = childEdges[childEdges.length - 1].target;
-  //     const firstChild = workingNodes.find(n => n.id === firstChildId);
-  //     const lastChild = workingNodes.find(n => n.id === lastChildId);
-
-  //     if (firstChild && lastChild) {
-  //       const firstX = firstChild.position.x;
-  //       const lastX = lastChild.position.x;
-  //       node.position.x = firstX + (lastX - firstX) / 2;
-  //     } else {
-  //       node.position.x = xOffset;
-  //     }
-
-  //     return currentX;
-  //   };
-
-  //   assignLevels(rootNode.id, 0);
-  //   calculateSubtreeWidth(rootNode.id);
-  //   positionNodes(rootNode.id, 50);
-
-  //   setNodes(nds => nds.map(originalNode => {
-  //     const updatedNode = workingNodes.find(n => n.id === originalNode.id);
-  //     if (!updatedNode) return originalNode;
-      
-  //     return {
-  //       ...originalNode,
-  //       position: updatedNode.position,
-  //       data: {
-  //         ...originalNode.data,
-  //         level: updatedNode.data.level,
-  //         subtreeWidth: updatedNode.data.subtreeWidth
-  //       }
-  //     };
-  //   }));
-
-  //   console.log("Layout recalculated successfully");
-  // }, [reactFlowInstance, setNodes]);
-  //
-  
-  const getChildNodes = (parentId: string) =>{
-    return allNodes.filter((node)=>{
-      allEdges.some((edge)  => edge.source === parentId && edge.target === node.id)
-    })
-  }
-
-  const repositionSibilings = (parentId:string) => {
-      const children = getChildNodes(parentId);
-      if(children.length === 0) return;
-
-    const startX =
-    (allNodes.find(node => node.id === parentId)?.position.x || 0) -
-    (children.length - 1) * (HORIZONTAL_SPACING / 2);
-    children.forEach((child, index) => {
-      setNodes(prevNodes =>
-        prevNodes.map(node =>
-          node.id === child.id
-            ? { ...node, position: { x: startX + index * HORIZONTAL_SPACING, y: node.position.y } }
-            : node
-        )
-      );
-    });
-  };
-  
+  // Only allow adding a child node if this node is a root node.
   const addChildNode = useCallback(() => {
-    if (!currentNode || hasChild) return;
+    if (!currentNode || hasChild || !isRootNode()) return;
  
     const newNodeId = `node-${Date.now()}`;
-    const parentNode = currentNode
     const nextPageNumber = data.getNextPageNumber ? data.getNextPageNumber() : 0;
-
 
     const newNode: Node<CustomNodeData> = {
       id: newNodeId,
@@ -199,31 +71,28 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
         onHeaderClick: data.onHeaderClick,
         getNextPageNumber: data.getNextPageNumber,
         level: (data.level || 0) + 1,
-        subtreeWidth: NODE_WIDTH
+        subtreeWidth: NODE_WIDTH,
       },
       position: {
-      x: parentNode.position.x,
-      y: parentNode.position.y + VERTICAL_SPACING
-
-      }
-
-    };  
+        x: currentNode.position.x,
+        y: currentNode.position.y + VERTICAL_SPACING,
+      },
+    };
 
     const newEdge: Edge = {
-      id: `edge-${id}-${newNodeId}`, // Fixed template literal
+      id: `edge-${id}-${newNodeId}`,
       source: id,
       target: newNodeId,
       type: 'smoothstep',
     };
 
-    console.log("New child Node Created :", newNode.data.label,newNode.position )
-
-    setNodes((nds) => [...nds, newNode]);
-    setEdges((eds) => [...eds, newEdge]);
+    console.log("New child Node Created:", newNode.data.label, newNode.position);
+    setNodes(nds => [...nds, newNode]);
+    setEdges(eds => [...eds, newEdge]);
     setHasChild(true);
-  
-  }, [currentNode, id, data, setNodes, setEdges, hasChild]);
+  }, [currentNode, id, data, setNodes, setEdges, hasChild, isRootNode]);
 
+  // Get all sibling nodes (children of the same parent) and sort them by x position.
   const sortSiblingNodes = useCallback((parentId: string): Node<CustomNodeData>[] => {
     const siblingEdges = allEdges.filter(edge => edge.source === parentId);
     const siblingNodes = siblingEdges
@@ -246,9 +115,9 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
     const nodesToDelete = [{ id }, ...childrenIds.map(nodeId => ({ id: nodeId }))];
     deleteElements({ nodes: nodesToDelete });
     setShowMenu(false);
-    // setTimeout(() => recalculateLayout(), 10);
   }, [id, findAllChildren, deleteElements]);
 
+  // Modify sibling logic so that the new sibling node is always added at the extreme.
   const addSiblingNode = useCallback((direction: Position) => {
     if (!currentNode || isRootNode()) return;
 
@@ -259,20 +128,25 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
     const parentNode = getNode(parentId);
     if (!parentNode) return;
 
-    const newNodeId = `node-${Date.now()}`; // Fixed template literal
+    const newNodeId = `node-${Date.now()}`;
     const nextPageNumber = data.getNextPageNumber ? data.getNextPageNumber() : 0;
 
+    // Get all siblings for the parent node.
+    const siblingNodes = sortSiblingNodes(parentId);
+    let newX = parentNode.position.x; // default fallback
 
-       const newPosition = {
-        x:
-          direction === Position.Left 
-            ? parentNode.position.x - HORIZONTAL_SPACING
-            : direction === Position.Right
-            ? parentNode.position.x + HORIZONTAL_SPACING
-            : parentNode.position.x,
-        y: parentNode.position.y + VERTICAL_SPACING,
-      };
+    if (direction === Position.Left) {
+      // New node will be to the left of the leftmost sibling.
+      newX = siblingNodes[0].position.x - HORIZONTAL_SPACING;
+    } else if (direction === Position.Right) {
+      // New node will be to the right of the rightmost sibling.
+      newX = siblingNodes[siblingNodes.length - 1].position.x + HORIZONTAL_SPACING;
+    }
 
+    const newPosition = {
+      x: newX,
+      y: parentNode.position.y + VERTICAL_SPACING,
+    };
 
     const newNode: Node<CustomNodeData> = {
       id: newNodeId,
@@ -280,54 +154,28 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
       data: {
         label: `Page ${nextPageNumber}`,
         sections: [],
-        addChildNodeWithEdge: data.addChildNodeWithEdge,
         onHeaderClick: data.onHeaderClick,
         getNextPageNumber: data.getNextPageNumber,
         level: data.level,
-        subtreeWidth: NODE_WIDTH
+        subtreeWidth: NODE_WIDTH,
       },
-      position: newPosition
+      position: newPosition,
     };
 
-    console.log("sibling node created:", newNode.data.label,newNode.position);
-    
-
+    console.log("Sibling node created:", newNode.data.label, newNode.position);
     const newEdge: Edge = {
-      id: `edge-${parentId}-${newNodeId}`, // Fixed template literal
+      id: `edge-${parentId}-${newNodeId}`,
       source: parentId,
       target: newNodeId,
       type: 'smoothstep',
     };
 
-    const siblingNodes = sortSiblingNodes(parentId);
-    const currentIndex = siblingNodes.findIndex(sibling => sibling.id === id);
-    if (currentIndex === -1) return;
-
-    const updatedNodes = [...reactFlowInstance.getNodes()];
-    let insertIndex = direction === 'left' 
-      ? updatedNodes.findIndex(node => node.id === siblingNodes[currentIndex].id)
-      : updatedNodes.findIndex(node => node.id === siblingNodes[currentIndex].id) + 1;
-
-    if (insertIndex === -1) insertIndex = updatedNodes.length;
-
-    updatedNodes.splice(insertIndex, 0, newNode);
+    // Append the new node to the list of nodes.
+    const updatedNodes = [...reactFlowInstance.getNodes(), newNode];
     setNodes(updatedNodes);
     setEdges(eds => [...eds, newEdge]);
-    // setTimeout(() => recalculateLayout(), 10);
-    repositionSibilings(parentId)
   }, [currentNode, id, data, getNode, setNodes, setEdges, isRootNode, findParentEdgeForNode, sortSiblingNodes, reactFlowInstance]);
 
-
-
-
-
-
-
-
-
-
-
-  
   const handleHeaderClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (data.onHeaderClick) {
@@ -338,11 +186,10 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
 
   const handleSaveLabel = useCallback(() => {
     if (editLabel.trim() && editLabel !== data.label) {
-      setNodes((nds) =>
-        nds.map((node) => node.id === id ? {
-          ...node,
-          data: { ...node.data, label: editLabel },
-        } : node)
+      setNodes(nds =>
+        nds.map(node =>
+          node.id === id ? { ...node, data: { ...node.data, label: editLabel } } : node
+        )
       );
     }
     setIsEditing(false);
@@ -416,7 +263,7 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
             </div>
           ))}
         </div>
-      )} 
+      )}
 
       <div className="p-3">
         <div className="flex mt-3 space-x-2">
@@ -431,6 +278,7 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
         </div>
       </div>
 
+      {/* Render sibling buttons for non-root nodes */}
       {!isRootNode() && (
         <>
           <div className="absolute -left-3 top-1/2 transform -translate-y-1/2 flex flex-col space-y-2">
@@ -442,7 +290,6 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
               +
             </button>
           </div>
-
           <div className="absolute -right-3 top-1/2 transform -translate-y-1/2 flex flex-col space-y-2">
             <button
               onClick={() => addSiblingNode(Position.Right)}
@@ -455,21 +302,25 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
         </>
       )}
 
-      <div className="absolute -bottom-7 left-1/2 transform -translate-x-1/2">
-        <button
-          onClick={()=> addChildNode()}
-          className={`w-6 h-6 text-gray-700 text-xl flex items-center justify-center bg-white rounded-full border border-gray-200 ${
-            hasChild ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
-          }`}
-          title="Add child node"
-          disabled={hasChild}
-        >
-          +
-        </button>
-      </div>
+      {/* Only render the add-child button for root nodes */}
+      {isRootNode() && (
+        <div className="absolute -bottom-7 left-1/2 transform -translate-x-1/2">
+          <button
+            onClick={() => addChildNode()}
+            className={`w-6 h-6 text-gray-700 text-xl flex items-center justify-center bg-white rounded-full border border-gray-200 ${
+              hasChild ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+            }`}
+            title="Add child node"
+            disabled={hasChild}
+          >
+            +
+          </button>
+        </div>
+      )}
+
       <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-cyan-600" />
     </div>
   );
 }
 
-export default CustomNode;  
+export default CustomNode;
