@@ -24,10 +24,10 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
   const [error, setError] = useState<string | null>(null);
   
   // Image state
-  const [imagePrompt, setImagePrompt] = useState<string>('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageLoading, setImageLoading] = useState<boolean>(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState<boolean>(false);
 
   const handleRegenerate = async () => {
     if (!businessName.trim()) {
@@ -98,15 +98,50 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileChange(e.dataTransfer.files[0]);
+    }
+  };
+
+     const handleFileChange = (file:File) => {
+        if (file && file.type.startsWith('image/')) {
+            if (file.size <= 5 * 1024 * 1024) { // Check if file size is under 5MB
+                setImageFile(file);
+                setImageError(null);
+            } else {
+                setImageError('Image size must be less than 5MB.');
+            }
+        } else if (file) {
+            setImageError('Please upload an image file');
+        }
+    };
+;
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
+      handleFileChange(e.target.files[0]);
     }
   };
 
   const handleImageGenerate = async () => {
-    if (!imageFile && !imagePrompt.trim()) {
-      setImageError('Please either upload an image or provide a prompt.');
+    if (!imageFile) {
+      setImageError('Please upload an image');
       return;
     }
 
@@ -114,49 +149,61 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
     setImageError(null);
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      if (imageFile) {
-        formData.append('image', imageFile);
-      }
-      if (imagePrompt) {
-        formData.append('prompt', imagePrompt.trim());
-      }
+      // Convert the file to base64
+      const base64Data = await fileToBase64(imageFile);
+      
+      // Prepare payload to match the WebsiteImage model
+      const payload = {
+        base64_image: base64Data
+      };
 
-      // You'll need to implement the appropriate API endpoint
       const response = await axios.post(
-        'http://localhost:8000/image_generator/generate',
-        formData,
+        'http://localhost:8000/website_image/image-website',
+        payload,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
           },
         }
       );
 
-      console.log('Image generated:', response);
+      console.log('Website generated:', response);
       if (onImageGenerated) {
         onImageGenerated(response.data);
       }
 
       // Reset form
-      setImagePrompt('');
       setImageFile(null);
       onOpenChange(false);
     } catch (err) {
-      console.error('Error generating image:', err);
+      console.error('Error generating website:', err);
       if (axios.isAxiosError(err) && err.response) {
-        setImageError(`Failed to generate image: ${err.response.data.detail || 'Unknown error'}`);
+        setImageError(`Failed to generate website: ${err.response.data.detail || 'Unknown error'}`);
       } else {
-        setImageError('Failed to generate image. Please try again.');
+        setImageError('Failed to generate website. Please try again.');
       }
     } finally {
       setImageLoading(false);
     }
   };
 
-  if (!open) return null;
+  // Helper function to convert File to base64 string
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        let base64String = reader.result as string;
+        // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+        base64String = base64String.split(',')[1];
+        resolve(base64String);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
 
+  if (!open) return null;
+  
   return (
     <div
       className="p-4 absolute top-0 left-0 mt-4 mx-20 h-fit rounded-lg w-80 bg-white shadow-lg z-50 border-r border-gray-200"
@@ -245,26 +292,51 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
           </TabsContent>
 
           <TabsContent value="image" className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Image Prompt</label>
-              <textarea
-                value={imagePrompt}
-                onChange={(e) => setImagePrompt(e.target.value)}
-                placeholder="Describe the image you want to generate..."
-                className="w-72 h-[120px] px-2.5 py-1.5 bg-gray-100 rounded"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Upload Image</label>
-              <Input
+            <div
+              className={`w-full h-40 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer ${
+                dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+              } ${imageFile ? 'bg-green-50' : ''}`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById('file-upload')?.click()}
+            >
+              <input
+                id="file-upload"
                 type="file"
                 accept="image/*"
-                onChange={handleImageUpload}
-                className="w-72 h-[30px] bg-gray-100"
+                className="hidden"
+                onChange={handleFileSelect}
               />
-              {imageFile && (
-                <p className="text-xs text-green-600 mt-1">File selected: {imageFile.name}</p>
+              
+              {imageFile ? (
+                <div className="text-center p-2">
+                  <div className="flex items-center justify-center text-green-600 mb-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>File uploaded</span>
+                  </div>
+                  <p className="text-sm text-gray-600 truncate max-w-xs">{imageFile.name}</p>
+                  <button 
+                    className="text-xs text-red-500 mt-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImageFile(null);
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-sm text-gray-500 mt-2">Drag and drop an image here, or click to select</p>
+                  <p className="text-xs text-gray-400">PNG, JPG, GIF up to 5MB</p>
+                </>
               )}
             </div>
             
@@ -275,9 +347,9 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
                 size="default"
                 onClick={handleImageGenerate}
                 className="w-full h-[30px] text-white rounded"
-                disabled={imageLoading}
+                disabled={imageLoading || !imageFile}
               >
-                {imageLoading ? 'Generating...' : 'Generate Image'}
+                {imageLoading ? 'Generating...' : 'Generate Website'}
               </Button>
             </div>
           </TabsContent>
