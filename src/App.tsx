@@ -1,16 +1,19 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, NavLink } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, NavLink, useLocation } from 'react-router-dom';
 import { ReactFlowProvider } from 'reactflow';
 import SitemapFlow from './siteMapGenerator';
-import Website from './websitePreview'; // Import the Website component
+import Website from './websitePreview'; // existing component
+import WebsitePreivewImg from './websitePreviewImg'; // new preview component
 import './App.css';
-import WebsitePreivewImg from './websitePreviewImg';
 
-function App() {
+const AppContent: React.FC = () => {
+  const location = useLocation();
+  // Hide nav bar on the website preview image page
+  const hideNav = location.pathname === '/website-preview';
+
   return (
-    <Router>
-      <div className="flex flex-col h-screen">
-        {/* Top Navigation Bar */}
+    <div className="flex flex-col h-screen">
+      {!hideNav && (
         <nav className="bg-gray-100 p-4 flex justify-center space-x-0.5">
           <NavLink
             to="/sitemap"
@@ -29,22 +32,27 @@ function App() {
             Website
           </NavLink>
         </nav>
+      )}
 
-        {/* Main Content */}
-        <div className="flex-1">
-          <ReactFlowProvider>
-            <Routes>
-              <Route path='/' element={<SitemapFlow/>}/>
-              <Route path="/sitemap" element={<SitemapFlow />} />
-
-              <Route path="/website" element={<Website />} />
-              <Route path='/website-preview' element={<WebsitePreivewImg />} />
-              <Route path="*" element={<div>Not Found</div>} />
-              
-            </Routes>
-          </ReactFlowProvider>
-        </div>
+      <div className="flex-1">
+        <ReactFlowProvider>
+          <Routes>
+            <Route path="/" element={<SitemapFlow />} />
+            <Route path="/sitemap" element={<SitemapFlow />} />
+            <Route path="/website" element={<Website />} />
+            <Route path="/website-preview" element={<WebsitePreivewImg />} />
+            <Route path="*" element={<div>Not Found</div>} />
+          </Routes>
+        </ReactFlowProvider>
       </div>
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
