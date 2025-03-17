@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNavigate } from 'react-router-dom';
 
 interface PageDialogProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface PageDialogProps {
   onSitemapGenerated?: (sitemap: any) => void;
   onImageGenerated?: (imageData: any) => void;
 }
+
 
 export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGenerated, onImageGenerated }: PageDialogProps) {
   // Sitemap state
@@ -28,6 +30,8 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
   const [imageLoading, setImageLoading] = useState<boolean>(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState<boolean>(false);
+
+  const navigate = useNavigate();
 
   const handleRegenerate = async () => {
     if (!businessName.trim()) {
@@ -53,7 +57,6 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
     setLoading(true);
     setError(null);
 
-    // Prepare the payload matching the backend SitemapGenerator model
     const payload = {
       businessName: businessName.trim(),
       businessDescription: businessDescription.trim(),
@@ -88,7 +91,6 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
     } catch (err) {
       console.error('Error generating sitemap:', err);
       if (axios.isAxiosError(err) && err.response) {
-        console.log('Backend error details:', err.response.data);
         setError(`Failed to generate sitemap: ${err.response.data.detail || 'Unknown error'}`);
       } else {
         setError('Failed to generate sitemap. Please try again.');
@@ -119,19 +121,18 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
     }
   };
 
-     const handleFileChange = (file:File) => {
-        if (file && file.type.startsWith('image/')) {
-            if (file.size <= 5 * 1024 * 1024) { // Check if file size is under 5MB
-                setImageFile(file);
-                setImageError(null);
-            } else {
-                setImageError('Image size must be less than 5MB.');
-            }
-        } else if (file) {
-            setImageError('Please upload an image file');
-        }
-    };
-;
+  const handleFileChange = (file: File) => {
+    if (file && file.type.startsWith('image/')) {
+      if (file.size <= 5 * 1024 * 1024) { // Check if file size is under 5MB
+        setImageFile(file);
+        setImageError(null);
+      } else {
+        setImageError('Image size must be less than 5MB.');
+      }
+    } else if (file) {
+      setImageError('Please upload an image file');
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -149,12 +150,11 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
     setImageError(null);
 
     try {
-      // Convert the file to base64
       const base64Data = await fileToBase64(imageFile);
+
       
-      // Prepare payload to match the WebsiteImage model
       const payload = {
-        base64_image: base64Data
+        image: base64Data
       };
 
       const response = await axios.post(
@@ -167,18 +167,20 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
         }
       );
 
-      console.log('Website generated:', response);
+      console.log('Website generated via uploaded image:', response.data);
       if (onImageGenerated) {
         onImageGenerated(response.data);
       }
+      localStorage.setItem('websiteCode', response.data.code);
 
-      // Reset form
+
       setImageFile(null);
       onOpenChange(false);
+      navigate('/website-preview');
     } catch (err) {
       console.error('Error generating website:', err);
       if (axios.isAxiosError(err) && err.response) {
-        setImageError(`Failed to generate website: ${err.response.data.detail || 'Unknown error'}`);
+        setImageError(`Failed to generate website: ${err.response.data || 'Unknown error'}`);
       } else {
         setImageError('Failed to generate website. Please try again.');
       }
@@ -187,18 +189,14 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
     }
   };
 
-  // Helper function to convert File to base64 string
+
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => {
-        let base64String = reader.result as string;
-        // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
-        base64String = base64String.split(',')[1];
-        resolve(base64String);
-      };
-      reader.onerror = error => reject(error);
+      
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
     });
   };
 

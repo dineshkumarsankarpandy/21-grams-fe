@@ -4,6 +4,7 @@ import { ReactFlowProvider } from 'reactflow';
 import SitemapFlow from './siteMapGenerator';
 import Website from './websitePreview'; // Import the Website component
 import './App.css';
+import WebsitePreivewImg from './websitePreviewImg';
 
 function App() {
   return (
@@ -37,6 +38,9 @@ function App() {
               <Route path="/sitemap" element={<SitemapFlow />} />
 
               <Route path="/website" element={<Website />} />
+              <Route path='/website-preview' element={<WebsitePreivewImg />} />
+              <Route path="*" element={<div>Not Found</div>} />
+              
             </Routes>
           </ReactFlowProvider>
         </div>
