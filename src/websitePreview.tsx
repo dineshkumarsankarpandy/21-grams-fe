@@ -27,18 +27,15 @@ function Website() {
       setError('Error parsing sitemap data from localStorage.');
       return;
     }
-    const businessName = savedData.businessName;
-    const businessDescription = savedData.businessDescription;
-    const imageUrl = savedData.imageUrl;
+    const projectBrief = savedData.projectBrief
+    // const imageUrl = savedData.imageUrl;
     const rootNode = savedData.savedNodes?.find((node: any) => node.id === 'root');
     if (!rootNode) {
       setError('Root node not found in sitemap data.');
       return;
     }
     const payload = {
-      businessName,
-      businessDescription,
-      imageUrl,
+      projectBrief,
       pageTitle: rootNode.data.label,
       sections: rootNode.data.sections?.map((section: any) => ({
         sectionTitle: section.title || section.sectionTitle,
@@ -67,29 +64,31 @@ function Website() {
       setError('No generated website available to deploy.');
       return;
     }
-  
+
     setDeploying(true);
     setError(null);
     setDeployUrl(null);
-  
+
     try {
       const zip = new JSZip();
       console.log("Raw HTML before zipping:", generatedWebsite.code); // Debug: Raw HTML
       zip.file("index.html", generatedWebsite.code); // Should be plain string
       const zipBlob = await zip.generateAsync({ type: "blob" });
       console.log("Zip Blob:", zipBlob); // Debug: Blob size
-      
+
       const uniqueSitemapId = `${Date.now()}`
       const formData = new FormData();
       formData.append("file", zipBlob, `website_${uniqueSitemapId}.zip`);
       formData.append("sitemap_id", generatedWebsite.sitemap_id || uniqueSitemapId);
-  
+
       const res = await axios.post(
         'http://localhost:8000/website_generator/deploy-website',
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
-  
+
+      console.log(res, "Response for depoloying the website in vercel")
+
       setDeployUrl(res.data.deployment_url);
     } catch (err: any) {
       setError(`Deployment failed: ${err.response?.data?.detail || err.message}`);

@@ -53,7 +53,7 @@ const loadInitialState = () => {
   try {
     const savedData = localStorage.getItem(SITEMAP_STORAGE_KEY);
     if (savedData) {
-      const { savedNodes, savedEdges, savedPageCount,businessName,businessDescription,imageUrl } = JSON.parse(savedData);
+      const { savedNodes, savedEdges, savedPageCount,businessName,businessDescription,imageUrl,projectBrief } = JSON.parse(savedData);
       if (savedNodes?.length > 0 && savedEdges) {
         return {
           nodes: savedNodes,
@@ -61,7 +61,8 @@ const loadInitialState = () => {
           pageCount: savedPageCount || 1,
           businessName:businessName || '',
           businessDescription: businessDescription || '',
-          imageUrl:imageUrl || ''
+          imageUrl:imageUrl || '',
+          projectBrief: projectBrief
         };
       }
     }
@@ -85,12 +86,12 @@ function SitemapFlow() {
   // Use a ref to store the React Flow instance for easy access
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
 
+  
   const [dialogNodeId, setDialogNodeId] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState<number>(savedState.pageCount);
 
 
-  const[businessName, setBusinessName] = useState(savedState.businessName)
-  const[businessDescription,setBusinessDescription]= useState(savedState.businessDescription)
+  const [projectBrief, setProjectBrief] = useState<any>(savedState.projectBrief);
   const [imageUrl, setImageUrl] = useState(savedState.imageUrl)
 
   // Controls whether the "Primary Setup" form is open
@@ -112,8 +113,7 @@ function SitemapFlow() {
         })),
         savedEdges: edges,
         savedPageCount: pageCount,
-        businessName,
-        businessDescription,
+        projectBrief,
         imageUrl
 
       };
@@ -260,21 +260,30 @@ function SitemapFlow() {
   const handleSitemapGenerated = useCallback(
     (data: any) => {
       console.log('handleSitemapGenerated received data:', data);
+      const sitemapData = data[0];
+      const projectBriefData = data[1];
+
   
       // Validate that the "pages" array exists.
-      if (!data || !data.pages || !Array.isArray(data.pages)) {
-        console.error('Invalid sitemap data received', data);
+      if (!sitemapData || !sitemapData.pages || !Array.isArray(sitemapData.pages)) {
+        console.error('Invalid sitemap data received', sitemapData);
         return;
       }
 
-      setBusinessName(data.businessName||'');
-      setBusinessDescription(data.businessDescription || '');
+      if (!projectBriefData?.business_name) {
+        console.error('Invalid project brief received', projectBriefData);
+        return;
+      }
+
+      setProjectBrief(projectBriefData);
+
+  
       setImageUrl(data.imageUrl)
   
       // Find the homepage data (match title "Home" or use the first page)
       const homepage =
-        data.pages.find((page: any) => page.pageTitle.toLowerCase() === 'home') ||
-        data.pages[0];
+        sitemapData.pages.find((page: any) => page.Pagename.toLowerCase() === 'home') ||
+        sitemapData.pages[0];
   
       // Update the root node with the homepage details and remove all other nodes.
       setNodes((nds) => {
@@ -286,11 +295,11 @@ function SitemapFlow() {
           ...rootNode,
           data: {
             ...rootNode.data,
-            label: homepage.pageTitle,
+            label: homepage.Pagename,
             sections: homepage.sections.map((section: any, index: number) => ({
               id: `${Date.now()}-${index}`,
-              title: section.sectionTitle,
-              description: section.sectionDescription,
+              title: section.section_name,
+              description: section.section_description,
             })),
           },
         };

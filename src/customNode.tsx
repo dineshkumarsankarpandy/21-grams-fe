@@ -18,7 +18,7 @@ export interface CustomNodeData {
 }
 
 const NODE_WIDTH = 180;
-const NODE_HEIGHT = 100;
+// const NODE_HEIGHT = 100;
 const HORIZONTAL_SPACING = 400;
 const VERTICAL_SPACING = 300;
 
@@ -32,7 +32,7 @@ function CustomNode({ id, data }: NodeProps<CustomNodeData>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const currentNode = getNode(id);
   const allEdges = reactFlowInstance.getEdges();
-  const allNodes = reactFlowInstance.getNodes();
+  // const allNodes = reactFlowInstance.getNodes();
 
   useEffect(() => {
     const childEdges = allEdges.filter(edge => edge.source === id);

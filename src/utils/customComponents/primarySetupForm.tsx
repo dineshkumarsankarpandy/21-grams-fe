@@ -44,10 +44,10 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
       return;
     }
 
-    if (!siteMapPrompt.trim()) {
-      setError('Sitemap Prompt is required.');
-      return;
-    }
+    // if (!siteMapPrompt.trim()) {
+    //   setError('Sitemap Prompt is required.');
+    //   return;
+    // }
     
     if (noOfPage <= 0) {
       setError('Number of Pages must be greater than 0.');
@@ -60,7 +60,7 @@ export function PrimarySetupForm({ open, onOpenChange, onRegenerate, onSitemapGe
     const payload = {
       businessName: businessName.trim(),
       businessDescription: businessDescription.trim(),
-      prompt: siteMapPrompt.trim(),
+      prompt: siteMapPrompt.trim()|| "",
       page: noOfPage,         
       language: language.trim() || 'english', 
     };
