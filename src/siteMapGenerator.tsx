@@ -53,7 +53,7 @@ const loadInitialState = () => {
   try {
     const savedData = localStorage.getItem(SITEMAP_STORAGE_KEY);
     if (savedData) {
-      const { savedNodes, savedEdges, savedPageCount,businessName,businessDescription,imageUrl,projectBrief } = JSON.parse(savedData);
+      const { savedNodes, savedEdges, savedPageCount,businessName,businessDescription,imageUrl,projectBrief,fullResponse } = JSON.parse(savedData);
       if (savedNodes?.length > 0 && savedEdges) {
         return {
           nodes: savedNodes,
@@ -62,7 +62,8 @@ const loadInitialState = () => {
           businessName:businessName || '',
           businessDescription: businessDescription || '',
           imageUrl:imageUrl || '',
-          projectBrief: projectBrief
+          projectBrief: projectBrief,
+          fullResponse: fullResponse
         };
       }
     }
@@ -93,6 +94,7 @@ function SitemapFlow() {
 
   const [projectBrief, setProjectBrief] = useState<any>(savedState.projectBrief);
   const [imageUrl, setImageUrl] = useState(savedState.imageUrl)
+  const [fullResponse, setFullResponse] = useState<any>(savedState.fullResponse);
 
   // Controls whether the "Primary Setup" form is open
   const [primarySetupOpen, setPrimarySetupOpen] = useState<boolean>(false);
@@ -114,6 +116,7 @@ function SitemapFlow() {
         savedEdges: edges,
         savedPageCount: pageCount,
         projectBrief,
+        fullResponse,
         imageUrl
 
       };
@@ -276,14 +279,14 @@ function SitemapFlow() {
       }
 
       setProjectBrief(projectBriefData);
-
+      setFullResponse(sitemapData);
   
       setImageUrl(data.imageUrl)
   
       // Find the homepage data (match title "Home" or use the first page)
-      const homepage =
-        sitemapData.pages.find((page: any) => page.Pagename.toLowerCase() === 'home') ||
-        sitemapData.pages[0];
+      const homepage =sitemapData.pages[0];
+        // sitemapData.pages.find((page: any) => page.Pagename.toLowerCase() === 'home') ||
+        // sitemapData.pages[1];
   
       // Update the root node with the homepage details and remove all other nodes.
       setNodes((nds) => {

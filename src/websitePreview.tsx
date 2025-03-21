@@ -37,10 +37,7 @@ function Website() {
     const payload = {
       projectBrief,
       pageTitle: rootNode.data.label,
-      sections: rootNode.data.sections?.map((section: any) => ({
-        sectionTitle: section.title || section.sectionTitle,
-        sectionDescription: section.description || section.sectionDescription,
-      })),
+      sections: savedData.fullResponse.pages[0]
     };
 
     setLoading(true);
